@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html ng-app="rea">
+
+  <head>
+    <meta charset="utf-8" />
+    <title>REA Robot Simulator</title>
+    <link data-require="bootstrap-css" data-semver="3.3.6" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script data-require="angular.js@1.4.x" src="https://code.angularjs.org/1.4.9/angular.js" data-semver="1.4.9"></script>
+    <script src="app/model.robot.js"></script>
+    <script src="app/model.table.js"></script>
+    <script src="app/service.robot.js"></script>
+    <script src="app/filter.range.js"></script>
+    <script src="app/app.js"></script>
+    <script src="app/app.spec.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+
+  <body ng-controller="RobotController">
+    <div class="container-fluid">
+      <nav class="navbar navbar-default">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <a role="button" class="btn btn-lg btn-primary" href="spec-runner.html">Run Tests</a>
+            <a href="#" class="navbar-brand">Toy Robot</a>
+          </div>
+        </div>
+      </nav>
+    </div>
+    <div class="container-fluid">
+      <label for="viewMode">View Mode: </label>
+      <select ng-model="viewMode">
+        <option value="GRAF">Graphical</option>
+        <option value="BASH">Bash</option>
+      </select>
+    </div>
+    <br/>
+    <div class="container-fluid" ng-show="viewMode == 'BASH'">
+      <div class="jumbotron" style="min-height: 110px;">
+        <label for="exampleInput">Example Input:</label>
+        <select ng-model="exampleInput" ng-change="inputTextarea = exampleInput">
+          <option value="">Please select one</option>
+          <option value="    PLACE 0,0,NORTH
+                  MOVE
+                  REPORT">Example A</option>
+          <option value="    PLACE 0,0,NORTH
+                  LEFT
+                  REPORT">Example B</option>
+          <option value="    PLACE 1,2,EAST
+                  MOVE
+                  MOVE
+                  LEFT
+                  MOVE
+                  REPORT">Example C</option>
+        </select>
+        <br/>
+        <label for="inputTextarea">Input:</label>
+        <br/>
+        <textarea ng-model="inputTextarea" class="form-control" rows="8"></textarea>
+        <a class="btn btn-lg btn-primary" ng-click="run()" ng-disabled="!inputTextarea">RUN</a>
+        <br/>
+        <label for="outputTextarea">Output:</label>
+        <br/>
+        <textarea ng-model="outputTextarea" readonly="readonly" rows="4" class="form-control"></textarea>
+      </div>
+    </div>
+    <div class="container-fluid" ng-show="viewMode == 'GRAF'">
+      <div class="jumbotron" style="min-height: 110px;">
+        <h3>Table Settings (Currently {{table.getSizeX()}} x {{table.getSizeY()}})</h3>
+        <div class="row">
+          <form name="tableForm">
+            <div class="form-group" ng-class="{'has-error': tableForm.sizeX.$error.min || tableForm.sizeX.$error.max}">
+              <label for="sizeX">Size X:</label>
+              <input type="number" ng-model="sizeX" name="sizeX" class="form-control" style="width: 160px;" min="1" max="20" />
+              <span class="help-block" ng-show="tableForm.sizeX.$error.min || tableForm.sizeX.$error.max">Min 1, Max 20</span>
+            </div>
+            <div class="form-group" ng-class="{'has-error': tableForm.sizeY.$error.min || tableForm.sizeY.$error.max}">
+              <label for="sizeY">Size Y:</label>
+              <input type="number" ng-model="sizeY" name="sizeY" class="form-control" style="width: 160px;" min="1" max="20" />
+              <span class="help-block" ng-show="tableForm.sizeY.$error.min || tableForm.sizeY.$error.max">Min 1, Max 20</span>
+            </div>
+            <div class="form-group">
+              <button type="button" class="btn btn-primary"  ng-click="table.setSizes(sizeX, sizeY); sizeX = null; sizeY = null;" ng-disabled="!sizeX || !sizeY">Set Table</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="jumbotron">
+        <div class="row text-center">
+          <a role="button" class="btn btn-lg btn-primary" ng-click="robotService.left()">Left</a>
+          <a role="button" class="btn btn-lg btn-default" style="width: 100px">{{robotService.getFace()}}</a>
+          <a role="button" class="btn btn-lg btn-primary" ng-click="robotService.right()">Right</a>
+        </div>
+        <br/>
+        <div class="row text-center">
+          <a role="button" class="btn btn-lg btn-primary" ng-click="robotService.move()">Move</a>
+          <a role="button" class="btn btn-lg btn-primary" ng-click="placing = true" ng-show="!placing">Place</a>
+        </div>
+        <div style="margin-top: 20px;" ng-show="placing" class="row">
+
+          <form name="placeForm">
+            <div class="form-group" ng-class="{'has-error': placeForm.x.$error.min || placeForm.x.$error.max}">
+              <label for="x">x:</label>
+              <input type="number" ng-model="x" name="x" class="form-control" style="width: 160px;" min="0" max="{{table.getSizeX() - 1}}" />
+              <span class="help-block" ng-show="placeForm.x.$error.min || placeForm.x.$error.max">Min 0, Max {{table.getSizeX() - 1}} (table X size)</span>
+            </div>
+            <div class="form-group" ng-class="{'has-error': placeForm.y.$error.min || placeForm.y.$error.max}">
+              <label for="y">y:</label>
+              <input type="number" ng-model="y" name="y" class="form-control" style="width: 160px;" min="0" max="{{table.getSizeY() - 1}}" />
+              <span class="help-block" ng-show="placeForm.y.$error.min || placeForm.y.$error.max">Min 0, Max {{table.getSizeY() - 1}} (table Y size)</span>
+            </div>
+            <div class="form-group" ng-class="{'has-error': placeForm.y.$error.min || placeForm.y.$error.max}">
+              <label for="f">Face:</label>
+              <select ng-model="f">
+                <option ng-repeat="d in robotService.directions()" value="{{d}}">{{d}}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <a role="button" class="btn btn-lg btn-primary" ng-click="robotService.place(x,y,f); x = null; y = null; f = null; placing = false;" ng-disabled="!x || !y || !f">Save</a>
+              <a role="button" class="btn btn-lg btn-default" ng-click="placing = false" ng-disabled="x && y && z">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="jumbotron">
+        <strong>Robot Report: {{robotService.report()}}</strong><br/><br/>
+        <table>
+          <tbody>
+            <tr class="nostyle" ng-repeat="iy in [] | reverseRange:table.getSizeY()">
+              <td ng-repeat="ix in [] | range:table.getSizeX()" class="square text-center" ng-class="{'active': currentPosition(ix, iy)}"><i class="glyphicon" ng-class="{'glyphicon-arrow-up' : currentPosition(ix, iy) && robotService.getFace() == 'NORTH', 'glyphicon-arrow-down' : currentPosition(ix, iy) && robotService.getFace() == 'SOUTH', 'glyphicon-arrow-right' : currentPosition(ix, iy) && robotService.getFace() == 'EAST', 'glyphicon-arrow-left' : currentPosition(ix, iy) && robotService.getFace() == 'WEST'}"></i></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+
+</html>

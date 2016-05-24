@@ -1,0 +1,15 @@
+/* Put your css in here */
+
+td{
+	border: thin solid black;
+	width: 2em;
+	height: 2em;
+}
+
+table {
+  background-color: white;
+}
+
+.active {
+  background-color: red;
+}
